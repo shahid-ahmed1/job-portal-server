@@ -8,10 +8,19 @@ require('dotenv').config()
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
+// app.use(cors({
+//     origin: '*',  // Allow all origins
+//     credentials: true,
+//     methods: ['GET', 'POST', 'OPTIONS']
+//   }));
 app.use(cors({
-    origin:['http://localhost:5173'],
-    credentials:true
-
+    origin: [
+        'http://localhost:5173',
+        'https://job-portal-careare.web.app', 
+        'https://job-portal-careare.firebaseapp.com' 
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS']
 }));
 app.use(express.json());
 app.use(cookiePerser())
@@ -47,9 +56,9 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
         // jobs related apis
@@ -63,7 +72,8 @@ async function run() {
             res
             .cookie('token',token,{
                 httpOnly:true,
-                secure:false
+                secure:process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
             }).send({success:true})
         })
          
@@ -71,7 +81,8 @@ async function run() {
           res
           .clearCookie('token',{
             httpOnly:true,
-            secure:false
+            secure:process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
           })
           .send({success:true})
         })
@@ -194,7 +205,7 @@ async function run() {
 }
 run().catch(console.dir);
 
-
+app.options('*', cors());
 app.get('/', (req, res) => {
     res.send('Job is falling from the sky')
 })
